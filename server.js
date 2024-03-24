@@ -86,11 +86,15 @@ router.post('/signin', function (req, res) {
     })
 });
 
-//get movies
+// GET MOVIES
 router.get('/movies', authJwtController.isAuthenticated, (req, res) => {
-    Movie.find({}, title) 
+    Movie.find({ title: { $exists: true } })
         .then(movies => {
             res.status(200).json(movies);
+        })
+        .catch(error => {
+            console.error('Error finding movies:', error);
+            res.status(500).json({ error: 'An error occurred while finding movies' });
         });
 });
 
