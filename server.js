@@ -86,61 +86,80 @@ router.post('/signin', function (req, res) {
     })
 });
 
-//get movies
-router.get('/movies', authJwtController.isAuthenticated, (req, res) => {
-    Movie.find({}, title) 
-        .then(movies => {
-            res.status(200).json(movies);
-        });
-});
-
 router.route('/movies')
-    .get((req, res) => {
-        const o = getJSONObjectForMovieRequirement(req);
-        o.status = 200;
-        o.message = "GET Movies";
-        res.status(200).json(o);
-    })
-
-    .post(async (req, res) => {
-        const { title, releaseDate, genre, actors } = req.body;
-
-        const newMovie = new Movie({
-            title,
-            releaseDate,
-            genre,
-            actors
-        });
-
-        try {
-            await newMovie.save();
-            const o = getJSONObjectForMovieRequirement(req);
-            o.status = 201;
-            o.message = 'Movie added successfully'
-            res.status(201).json({o});
-        } catch (error) {
-            res.status(500).json({ message: 'Failed to add movie', error: error.message });
+    .get(authJwtController.isAuthenticated, (req,res) => {
+        console.log(req.body);
+        if (req.get('Content-Type')) {
+            res = res.type(req.get('Content-Type'));
         }
-    })
-
-    .put(authJwtController.isAuthenticated, (req, res) => {
-        const o = getJSONObjectForMovieRequirement(req);
+        var o = getJSONObjectForMovieRequirement(req);
+        
         o.status = 200;
-        o.message = "Movie Updated";
-        res.status(200).json(o);
-    })
-
-    .delete(authController.isAuthenticated, (req, res) => {
-        const o = getJSONObjectForMovieRequirement(req);
-        o.status = 200;
-        o.message = "movie deleted";
+        o.message = "GET movies";
+        o.query = o.body;
+        o.env = o.key;
         res.json(o);
-    })
+    }
+    )
+    .post(authJwtController.isAuthenticated, (req,res) => {
+        console.log(req.body);
+        if (req.get('Content-Type')) {
+            res = res.type(req.get('Content-Type'));
+        }
+        var o = getJSONObjectForMovieRequirement(req);
+        if (o.actors=="") {
+            return res.status(400).send({success: false, msg: 'Movie needs actors'});
+        }
+        else{
+            var movie = new Movie()
+            movie.title=o.title;
+            movie.releaseDate=o.releaseDate;
+            movie.genre=o.genre;
+            movie.actors=o.actors;
+            movie.save(function(err){
+                if (err) {
+                        return res.json(err);
+                }
+            });
+            o.status = 200;
+            o.message = "Movie saved";
+            o.query = o.body;
+            o.env = o.key;
+            res.json(o);
+        }
+    }    
+    )
+    .delete(authController.isAuthenticated, (req, res) => {
+        console.log(req.body);
+        if (req.get('Content-Type')) {
+            res = res.type(req.get('Content-Type'));
+        }
+        var o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "Movie deleted";
+        o.query = o.body;
+        o.env = o.key;
+        res.json(o);
+    }
 
+    )
+    .put(authJwtController.isAuthenticated, (req, res) => {
+        console.log(req.body);
+        if (req.get('Content-Type')) {
+            res = res.type(req.get('Content-Type'));
+        }
+        var o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "Movie updated";
+        o.query = o.body;
+        o.env = o.key;
+        res.json(o);
+    }
+    )
     .all((req, res) => {
-        res.status(405).json({success: false, msg: 'HTTP Method Not Allowed'});
+        res.status(405).send({ message: "HTTP method not supported."});
     })
-
+    ;
 
 app.use('/', router);
 app.listen(process.env.PORT || 8080);
