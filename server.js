@@ -120,7 +120,7 @@ router.put('/movies/:id', authJwtController.isAuthenticated, (req, res) => {
         });
 });
 
-router.delete('/movies', authJwtController.isAuthenticated, (req, res) => {
+router.delete('/movies/:id', authJwtController.isAuthenticated, (req, res) => {
     const { id } = req.params;
 
     Movie.findByIdAndDelete(id)
