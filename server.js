@@ -116,7 +116,14 @@ router.put('/movies/:id', authJwtController.isAuthenticated, (req, res) => {
 
     Movie.findByIdAndUpdate(id, { title, releaseDate, genre, actors }, { new: true })
         .then(updatedMovie => {
+            if (!updatedMovie) {
+                return res.status(404).json({ error: 'Movie not found' });
+            }
             res.status(200).json(updatedMovie);
+        })
+        .catch(error => {
+            console.error('Error updating movie:', error);
+            res.status(500).json({ error: 'An error occurred while updating the movie' });
         });
 });
 
