@@ -88,41 +88,59 @@ router.post('/signin', function (req, res) {
 
 //get movies
 router.get('/movies', authJwtController.isAuthenticated, (req, res) => {
-    Movie.find({}, title) // Projecting only the required fields
+    Movie.find({}, title) 
         .then(movies => {
             res.status(200).json(movies);
         });
 });
 
-// POST MOVIES
-router.post('/movies', authJwtController.isAuthenticated, (req, res) => {
-    const { title, releaseDate, genre, actors } = req.body;
-    const newMovie = new Movie({ title, releaseDate, genre, actors });
+router.route('/movies')
+    .get((req, res) => {
+        const o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "GET Movies";
+        res.status(200).json(o);
+    })
 
-    newMovie.save()
-        .then(savedMovie => {
-            res.status(200).json(savedMovie);
+    .post(async (req, res) => {
+        const { title, releaseDate, genre, actors } = req.body;
+
+        const newMovie = new Movie({
+            title,
+            releaseDate,
+            genre,
+            actors
         });
-});
 
-// GET MOVIES
-router.put('/movies/:id', authJwtController.isAuthenticated, (req, res) => {
-    const { id } = req.params;
-    const { title, releaseDate, genre, actors } = req.body;
+        try {
+            await newMovie.save();
+            const o = getJSONObjectForMovieRequirement(req);
+            o.status = 201;
+            o.message = 'Movie added successfully'
+            res.status(201).json({o});
+        } catch (error) {
+            res.status(500).json({ message: 'Failed to add movie', error: error.message });
+        }
+    })
 
-    Movie.findByIdAndUpdate(id, { title, releaseDate, genre, actors }, { new: true })
-        .then(updatedMovie => {
-            res.status(200).json(updatedMovie);
-        });
-});
+    .put(authJwtController.isAuthenticated, (req, res) => {
+        const o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "Movie Updated";
+        res.status(200).json(o);
+    })
 
-router.delete('/movies', authJwtController.isAuthenticated, (req, res) => {
-    const { id } = req.params;
+    .delete(authController.isAuthenticated, (req, res) => {
+        const o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "movie deleted";
+        res.json(o);
+    })
 
-    Movie.findByIdAndDelete(id)
-        .then(deletedMovie => res.status(200).json(deletedMovie))
-        .catch(error => res.status(500).json({ error: 'An error occurred while deleting the movie' }));
-});
+    .all((req, res) => {
+        res.status(405).json({success: false, msg: 'HTTP Method Not Allowed'});
+    })
+
 
 app.use('/', router);
 app.listen(process.env.PORT || 8080);
